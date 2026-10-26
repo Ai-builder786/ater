@@ -10,6 +10,30 @@ import db from './db.js'
 
 const app = express()
 app.set('trust proxy',1);
+// Create the initial admin only when the database has no users.
+const adminName = process.env.ATERS_ADMIN_NAME?.trim();
+const adminEmail = process.env.ATERS_ADMIN_EMAIL?.trim().toLowerCase();
+const adminPassword = process.env.ATERS_ADMIN_PASSWORD;
+
+if (adminName && adminEmail && adminPassword) {
+  const userCount = db.prepare('SELECT COUNT(*) AS count FROM users').get().count;
+
+  if (userCount === 0) {
+    if (
+      adminName.length >= 2 &&
+      /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adminEmail) &&
+      adminPassword.length >= 12
+    ) {
+      db.prepare(
+        'INSERT INTO users(name, email, password_hash, role) VALUES(?,?,?,?)'
+      ).run(adminName, adminEmail, bcrypt.hashSync(adminPassword, 12), 'admin');
+
+      console.log('Initial admin account created.');
+    } else {
+      console.error('Initial admin settings are invalid.');
+    }
+  }
+}
 const PORT = Number(process.env.PORT || 3000)
 const isProd = process.env.NODE_ENV === 'production'
 const here = path.dirname(fileURLToPath(import.meta.url))
