@@ -8,7 +8,8 @@ import { fileURLToPath } from 'node:url'
 import { z } from 'zod'
 import db from './db.js'
 
-const app = express('trust proxy',1)
+const app = express()
+app.set('trust proxy',1);
 const PORT = Number(process.env.PORT || 3000)
 const isProd = process.env.NODE_ENV === 'production'
 const here = path.dirname(fileURLToPath(import.meta.url))
